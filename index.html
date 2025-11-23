@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>日文單字學習</title>
+
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-72x72.png">
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+
+    <style>
+    /* 保留你原本的樣式（如先前版本） */
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      min-height:100vh;padding:15px;color:#333;
+    }
+    .container{max-width:100%;margin:0 auto;background:white;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.15);overflow:hidden;min-height:calc(100vh - 30px);display:flex;flex-direction:column}
+    .screen{padding:20px 15px;display:none;flex-direction:column;height:100%;flex:1}
+    .active{display:flex}
+    h1{text-align:center;margin-bottom:20px;color:#2d3748;font-size:1.3rem;font-weight:600}
+    .btn{background:#667eea;color:white;border:none;padding:14px 16px;border-radius:12px;font-size:15px;margin:6px 0;cursor:pointer;transition:all .3s ease;text-align:center;text-decoration:none;font-weight:500;width:100%}
+    .btn:hover{background:#5a6fd8;transform:translateY(-2px)}
+    .btn-secondary{background:#f7fafc;color:#4a5568;border:2px solid #e2e8f0}
+    .btn-secondary:hover{background:#edf2f7;border-color:#cbd5e0}
+    .btn-danger{background:#e53e3e;color:white}
+    .btn-success{background:#38a169;color:white}
+    .setting-group{margin:10px 0}
+    label{display:block;margin-bottom:5px;font-weight:500;color:#4a5568;font-size:14px}
+    select,input{width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;background:white}
+    select:focus,input:focus{outline:none;border-color:#667eea}
+    .quiz-area{flex:1;display:flex;flex-direction:column;justify-content:space-between;min-height:0}
+    .question{font-size:1.6rem;text-align:center;margin:20px 0;min-height:40px;color:#2d3748;line-height:1.4;padding:0 10px;flex-shrink:0}
+    .options{display:grid;gap:10px;margin:15px 0;flex-shrink:0}
+    .option-btn{background:#f7fafc;border:2px solid #e2e8f0;padding:14px;border-radius:12px;cursor:pointer;transition:all .3s;font-size:15px;text-align:left}
+    .option-btn:hover{border-color:#667eea;background:#edf2f7}
+    .answer{background:#f0fff4;border:2px solid #9ae6b4;padding:15px;border-radius:12px;margin:10px 0;display:none;line-height:1.4;font-size:14px;flex-shrink:0;max-height:280px;overflow-y:auto}
+    .controls{display:flex;gap:8px;margin-top:15px;flex-shrink:0;position:sticky;bottom:0;background:white;padding:10px 0;border-top:1px solid #e2e8f0}
+    .controls .btn{flex:1;margin:0;padding:12px}
+    .nav-controls{display:flex;gap:8px;margin-bottom:15px;flex-shrink:0}
+    .nav-controls .btn{flex:1;margin:0;padding:10px;font-size:13px}
+    .progress{text-align:center;color:#718096;margin-bottom:12px;font-size:13px;flex-shrink:0}
+    .hidden{display:none}
+    .speak-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;color:#667eea;margin-left:6px;padding:4px}
+    .favorite-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;color:#718096;margin-left:6px;padding:4px;transition:color .3s}
+    .favorite-btn.active{color:#e53e3e}
+    .correct{background:#9ae6b4 !important;border-color:#48bb78 !important}
+    .incorrect{background:#fed7d7 !important;border-color:#f56565 !important}
+    .stats{background:#f7fafc;padding:12px;border-radius:12px;margin:8px 0;font-size:14px}
+    .env-badge{position:fixed;top:10px;right:10px;background:#e53e3e;color:white;padding:4px 8px;border-radius:4px;font-size:11px;z-index:1000}
+    .category-badge{display:inline-block;background:#edf2f7;color:#4a5568;padding:3px 6px;border-radius:6px;font-size:11px;margin-left:6px}
+    .loading{text-align:center;padding:20px;color:#718096}
+    @media (max-width:480px){body{padding:10px}.container{min-height:calc(100vh - 20px);border-radius:16px}.screen{padding:15px 12px}h1{font-size:1.2rem;margin-bottom:15px}.question{font-size:1.4rem;margin:15px 0}.btn{padding:12px 14px;font-size:14px}.options{gap:8px;margin:12px 0}.option-btn{padding:12px;font-size:14px}.answer{padding:12px;margin:8px 0;font-size:13px;max-height:180px}.controls{margin-top:12px;padding:8px 0}.nav-controls{margin-bottom:12px}}
+    </style>
+</head>
+<body>
+  <div id="envBadge" class="env-badge" style="display:none">本地模式</div>
+
+  <div class="container">
+    <!-- main menu -->
+    <div id="mainMenu" class="screen active">
+      <h1>日文單字學習</h1>
+      <div class="loading" id="loadingText">載入中...</div>
+      <div id="mainMenuButtons" style="display:none">
+        <button class="btn" data-action="quizSetup">📝 測驗模式</button>
+        <button class="btn" data-action="studySetup">📚 背誦模式</button>
+        <button class="btn btn-secondary" data-action="favoriteScreen">⭐ 收藏單字</button>
+        <button class="btn btn-secondary" data-action="progressScreen">📊 學習進度</button>
+        <button class="btn btn-secondary" data-action="checkUpdate">🔄 檢查更新</button>
+        <button class="btn btn-success" id="installButton" style="display:none">📱 安裝到主螢幕</button>
+      </div>
+    </div>
+
+    <!-- quiz setup -->
+    <div id="quizSetup" class="screen">
+      <h1>測驗設定</h1>
+      <div class="setting-group">
+        <label>測驗類型</label>
+        <select id="quizType">
+          <option value="mixed">🎯 綜合模式</option>
+          <option value="nouns">📖 名詞</option>
+          <option value="i_adjective">🔵 い形容詞</option>
+          <option value="na_adjective">🟢 な形容詞</option>
+          <option value="verb">🏃 動詞</option>
+          <option value="adverb">⚡ 副詞</option>
+          <option value="onomatopoeia">🔊 疊詞</option>
+          <option value="keigo">🙏 敬語</option>
+          <option value="grammar">📝 文法</option>
+          <option value="custom">🎛️ 自定義ID範圍</option>
+          <option value="favorite">⭐ 收藏單字</option>
+        </select>
+      </div>
+      <div class="setting-group" id="customRangeGroup" style="display:none">
+        <label>ID範圍 (例: N001-N050)</label>
+        <input type="text" id="customRange" placeholder="N001-N050">
+      </div>
+      <div class="setting-group">
+        <label>題數</label>
+        <select id="questionCount">
+          <option value="5">5題</option>
+          <option value="10" selected>10題</option>
+          <option value="15">15題</option>
+          <option value="20">20題</option>
+          <option value="30">30題</option>
+          <option value="50">50題</option>
+        </select>
+      </div>
+      <button class="btn btn-success" data-action="startQuiz">開始測驗</button>
+      <button class="btn btn-secondary" data-action="mainMenu">返回主選單</button>
+    </div>
+
+    <!-- study setup -->
+    <div id="studySetup" class="screen">
+      <h1>背誦設定</h1>
+      <div class="setting-group">
+        <label>學習類型</label>
+        <select id="studyType">
+          <option value="mixed">🎯 綜合模式</option>
+          <option value="nouns">📖 名詞</option>
+          <option value="i_adjective">🔵 い形容詞</option>
+          <option value="na_adjective">🟢 な形容詞</option>
+          <option value="verb">🏃 動詞</option>
+          <option value="adverb">⚡ 副詞</option>
+          <option value="onomatopoeia">🔊 疊詞</option>
+          <option value="keigo">🙏 敬語</option>
+          <option value="grammar">📝 文法</option>
+          <option value="custom">🎛️ 自定義ID範圍</option>
+          <option value="favorite">⭐ 收藏單字</option>
+        </select>
+      </div>
+      <div class="setting-group" id="studyCustomRangeGroup" style="display:none">
+        <label>ID範圍 (例: N001-N050)</label>
+        <input type="text" id="studyCustomRange" placeholder="N001-N050">
+      </div>
+      <button class="btn btn-success" data-action="startStudy">開始背誦</button>
+      <button class="btn btn-secondary" data-action="mainMenu">返回主選單</button>
+    </div>
+
+    <!-- quiz screen -->
+    <div id="quizScreen" class="screen">
+      <div class="nav-controls">
+        <button class="btn btn-secondary" data-action="mainMenu">🏠 回首頁</button>
+        <button class="btn btn-danger" data-action="endQuizEarly">⏹️ 提前結束</button>
+      </div>
+      <div class="progress" id="progressText">1/10</div>
+      <h1>測驗中 <span id="quizCategory" class="category-badge"></span></h1>
+      <div class="quiz-area">
+        <div class="question" id="currentQuestion">
+          <span id="questionText"></span>
+          <button class="speak-btn" data-action="speakCurrentWord">🔊</button>
+          <button class="favorite-btn" id="quizFavoriteBtn" data-action="toggleFavorite">☆</button>
+        </div>
+        <div class="options" id="optionsContainer"></div>
+        <div class="answer" id="answerDisplay"></div>
+        <div class="controls">
+          <button class="btn" id="showAnswerBtn" data-action="showAnswer">顯示解答</button>
+          <button class="btn btn-secondary" id="nextBtn" data-action="nextQuestion" style="display:none">下一題</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- study screen -->
+    <div id="studyScreen" class="screen">
+      <div class="nav-controls">
+        <button class="btn btn-secondary" data-action="mainMenu">🏠 回首頁</button>
+        <button class="btn btn-danger" data-action="endStudyEarly">⏹️ 提前結束</button>
+      </div>
+      <div class="progress" id="studyProgressText">1/10</div>
+      <h1>背誦中 <span id="studyCategory" class="category-badge"></span></h1>
+      <div class="quiz-area">
+        <div class="question" id="studyQuestion">
+          <span id="studyQuestionText"></span>
+          <button class="speak-btn" data-action="speakCurrentStudyWord">🔊</button>
+          <button class="favorite-btn" id="studyFavoriteBtn" data-action="toggleStudyFavorite">☆</button>
+        </div>
+        <div class="answer" id="studyAnswerDisplay"></div>
+        <div class="controls">
+          <button class="btn" data-action="showStudyAnswer">顯示解答</button>
+          <button class="btn btn-secondary" data-action="nextStudyWord">下一個</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- favorites -->
+    <div id="favoriteScreen" class="screen">
+      <h1>收藏單字</h1>
+      <div id="favoriteList"></div>
+      <div class="controls">
+        <button class="btn" data-action="startQuizFromFavorites">測驗收藏單字</button>
+        <button class="btn" data-action="startStudyFromFavorites">背誦收藏單字</button>
+        <button class="btn btn-secondary" data-action="mainMenu">返回主選單</button>
+      </div>
+    </div>
+
+    <!-- progress -->
+    <div id="progressScreen" class="screen">
+      <h1>學習進度</h1>
+      <div id="progressStats"></div>
+      <button class="btn btn-secondary" data-action="mainMenu">返回主選單</button>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    const app = {
+      currentVocab: [],
+      currentQuestionIndex: 0,
+      score: 0,
+      quizMode: true,
+      studyWords: [],
+      currentStudyIndex: 0,
+      isLocal: window.location.protocol === 'file:',
+      vocabularyData: {},
+      currentQuizType: '',
+      deferredPrompt: null,
+      registration: null,
+      updateAvailable: false,
+      dataFilesCandidates: [
+        { name: 'nouns', candidates: ['data/nouns_enriched.js', 'data/nouns.js'] },
+        { name: 'i_adjectives', candidates: ['data/i_adjectives_enriched.js', 'data/i_adjectives.js'] },
+        { name: 'na_adjectives', candidates: ['data/na_adjectives_enriched.js', 'data/na_adjectives.js'] },
+        { name: 'verbs', candidates: ['data/verbs_enriched.js', 'data/verbs.js'] },
+        { name: 'adverbs', candidates: ['data/adverbs_enriched.js', 'data/adverbs.js'] },
+        { name: 'onomatopoeia', candidates: ['data/onomatopoeia_enriched.js', 'data/onomatopoeia.js'] },
+        { name: 'keigo', candidates: ['data/keigo_enriched.js', 'data/keigo.js'] },
+        { name: 'grammar', candidates: ['data/grammar_enriched.js', 'data/grammar.js'] }
+      ],
+
+      init: function(){
+        if (this.isLocal) document.getElementById('envBadge').style.display = 'block';
+        this.registerServiceWorker();
+        this.setupEventListeners();
+        this.loadVocabularyData();
+        if (!localStorage.getItem('vocabFavorites')) localStorage.setItem('vocabFavorites','[]');
+      },
+
+      registerServiceWorker: function(){
+        if ('serviceWorker' in navigator){
+          navigator.serviceWorker.register('./sw.js').then(reg=>{
+            this.registration = reg;
+            reg.addEventListener && reg.addEventListener('updatefound', ()=>{
+              const newWorker = reg.installing;
+              newWorker && newWorker.addEventListener && newWorker.addEventListener('statechange', ()=>{
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller){
+                  this.updateAvailable = true;
+                  const el = document.querySelector('[data-action="checkUpdate"]');
+                  if (el) el.innerHTML = '🔄 檢查更新 <span style="color:red">●</span>';
+                }
+              });
+            });
+          }).catch(e=>console.warn('SW register failed', e));
+        }
+      },
+
+      setupEventListeners: function(){
+        document.addEventListener('click', (e)=>{
+          if (e.target.matches('[data-action]')){
+            const action = e.target.getAttribute('data-action');
+            this.handleAction(action);
+          }
+        });
+        document.getElementById('quizType').addEventListener('change', ()=> this.toggleCustomRange());
+        document.getElementById('studyType').addEventListener('change', ()=> this.toggleStudyCustomRange());
+      },
+
+      handleAction: function(action){
+        switch(action){
+          case 'mainMenu': this.showScreen('mainMenu'); break;
+          case 'quizSetup': this.showScreen('quizSetup'); break;
+          case 'studySetup': this.showScreen('studySetup'); break;
+          case 'favoriteScreen': this.showScreen('favoriteScreen'); break;
+          case 'progressScreen': this.showScreen('progressScreen'); break;
+          case 'startQuiz': this.startQuiz(); break;
+          case 'startStudy': this.startStudy(); break;
+          case 'startQuizFromFavorites': this.startQuizFromFavorites(); break;
+          case 'startStudyFromFavorites': this.startStudyFromFavorites(); break;
+          case 'showAnswer': this.showAnswer(); break;
+          case 'nextQuestion': this.nextQuestion(); break;
+          case 'endQuizEarly': this.endQuizEarly(); break;
+          case 'showStudyAnswer': this.showStudyAnswer(); break;
+          case 'nextStudyWord': this.nextStudyWord(); break;
+          case 'endStudyEarly': this.endStudyEarly(); break;
+          case 'toggleFavorite': this.toggleFavorite(); break;
+          case 'toggleStudyFavorite': this.toggleStudyFavorite(); break;
+          case 'speakCurrentWord': this.speakCurrentWord(); break;
+          case 'speakCurrentStudyWord': this.speakCurrentStudyWord(); break;
+          case 'checkUpdate': this.checkForUpdates(); break;
+        }
+      },
+
+      loadVocabularyData: function(){
+        const list = this.dataFilesCandidates.slice();
+        let idx = 0;
+        const next = ()=>{
+          if (idx >= list.length){ this.finalizeDataLoad(); return; }
+          const item = list[idx++];
+          this.loadScriptCandidates(item.candidates).then(url=>{
+            if (url) this.assignVocabularyData(item.name);
+            else this.assignEmpty(item.name);
+            next();
+          });
+        };
+        next();
+      },
+
+      loadScriptCandidates: function(cands){
+        return new Promise(resolve=>{
+          let i=0;
+          const tryOne = ()=>{
+            if (i>=cands.length) return resolve(null);
+            const s = document.createElement('script');
+            s.src = cands[i++];
+            s.async = true;
+            s.onload = ()=> resolve(s.src);
+            s.onerror = ()=> { s.remove(); tryOne(); };
+            document.head.appendChild(s);
+          };
+          tryOne();
+        });
+      },
+
+      assignVocabularyData: function(name){
+        const mapping = {
+          nouns: ['nounsData','nouns'],
+          i_adjectives: ['iAdjectivesData','i_adjectives','i_adjectivesData'],
+          na_adjectives: ['naAdjectivesData','na_adjectives','na_adjectivesData'],
+          verbs: ['verbsData','verbs'],
+          adverbs: ['adverbsData','adverbs'],
+          onomatopoeia: ['onomatopoeiaData','onomatopoeia'],
+          keigo: ['keigoData','keigo'],
+          grammar: ['grammarData','grammar']
+        };
+        const keys = mapping[name] || [name];
+        let found = null;
+        for (const k of keys) if (window[k] && Array.isArray(window[k])) { found = k; break; }
+        const targetMap = { nouns:'nouns', i_adjectives:'i_adjective', na_adjectives:'na_adjective', verbs:'verb', adverbs:'adverb', onomatopoeia:'onomatopoeia', keigo:'keigo', grammar:'grammar' };
+        const target = targetMap[name] || name;
+        this.vocabularyData[target] = found ? window[found] : [];
+        console.log('Assigned', found, '-> vocabularyData['+target+']', (this.vocabularyData[target]||[]).length);
+      },
+
+      assignEmpty: function(name){
+        const targetMap = { nouns:'nouns', i_adjectives:'i_adjective', na_adjectives:'na_adjective', verbs:'verb', adverbs:'adverb', onomatopoeia:'onomatopoeia', keigo:'keigo', grammar:'grammar' };
+        const target = targetMap[name] || name;
+        this.vocabularyData[target] = [];
+      },
+
+      finalizeDataLoad: function(){
+        document.getElementById('loadingText').style.display = 'none';
+        document.getElementById('mainMenuButtons').style.display = 'block';
+        console.log('Vocabulary load complete', this.vocabularyData);
+      },
+
+      showScreen: function(id){
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (id === 'favoriteScreen') this.showFavoriteList();
+        if (id === 'progressScreen') this.showProgressStats();
+      },
+
+      toggleCustomRange: function(){ const t=document.getElementById('quizType').value; document.getElementById('customRangeGroup').style.display = t==='custom' ? 'block' : 'none'; },
+      toggleStudyCustomRange: function(){ const t=document.getElementById('studyType').value; document.getElementById('studyCustomRangeGroup').style.display = t==='custom' ? 'block' : 'none'; },
+
+      startQuiz: function(){
+        const type = document.getElementById('quizType').value;
+        const range = document.getElementById('customRange').value;
+        const count = parseInt(document.getElementById('questionCount').value,10) || 10;
+        this.currentQuizType = type;
+        this.currentVocab = this.loadVocabulary(type, range);
+        if (!this.currentVocab.length){ alert('沒有找到符合的單字！'); return; }
+        this.currentVocab = this.shuffleArray(this.currentVocab).slice(0, count);
+        this.currentQuestionIndex = 0; this.score = 0; this.quizMode = true;
+        this.showScreen('quizScreen'); this.showQuestion();
+      },
+
+      startStudy: function(){
+        const type = document.getElementById('studyType').value;
+        const range = document.getElementById('studyCustomRange').value;
+        this.currentQuizType = type;
+        this.studyWords = this.loadVocabulary(type, range);
+        if (!this.studyWords.length){ alert('沒有找到符合的單字！'); return; }
+        this.currentStudyIndex = 0; this.quizMode = false;
+        this.showScreen('studyScreen'); this.showStudyWord();
+      },
+
+      loadVocabulary: function(type, range){
+        if (type === 'mixed') return [].concat(this.vocabularyData.nouns||[], this.vocabularyData.i_adjective||[], this.vocabularyData.na_adjective||[], this.vocabularyData.verb||[], this.vocabularyData.adverb||[], this.vocabularyData.onomatopoeia||[], this.vocabularyData.keigo||[], this.vocabularyData.grammar||[]);
+        if (type === 'custom') return this.loadCustomRange(range);
+        if (type === 'favorite') return this.getFavorites();
+        return this.vocabularyData[type] || [];
+      },
+
+      loadCustomRange: function(range){
+        const all = [].concat(this.vocabularyData.nouns||[], this.vocabularyData.i_adjective||[], this.vocabularyData.na_adjective||[], this.vocabularyData.verb||[], this.vocabularyData.adverb||[], this.vocabularyData.onomatopoeia||[], this.vocabularyData.keigo||[], this.vocabularyData.grammar||[]);
+        if (!range) return all;
+        const parts = range.split('-').map(s=>s.trim());
+        if (parts.length !== 2) return all;
+        const [s,e] = parts;
+        return all.filter(w => w.id && w.id >= s && w.id <= e);
+      },
+
+      /* -----------------------------
+         Helper: 文字處理與抽取邏輯
+         ----------------------------- */
+
+      // normalize whitespace
+      normalizeText: function(s){
+        if (!s) return '';
+        return String(s).replace(/\s+/g,' ').trim();
+      },
+
+      // extract chinese text inside parentheses from example (returns plain text or '')
+      extractChineseFromExample: function(example){
+        if (!example) return '';
+        const m = example.match(/[（(]([^）)]+)[）)]/);
+        if (m && m[1]) return m[1].trim();
+        return '';
+      },
+
+      // detect CJK characters (Chinese/Japanese kanji)
+      hasCJK: function(s){
+        if (!s) return false;
+        return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(s);
+      },
+
+      // sanitize meaning_full: remove '常見用法' and '助詞說明' parts and remove usage/particle duplication
+      sanitizeMeaningFull: function(meaningFull, usage, particleExplanation){
+        let mf = meaningFull || '';
+        if (!mf) return { cleaned:'', suggestion: '' };
+        mf = this.normalizeText(mf);
+
+        // extract suggestion-like phrases "建議補充: ..." or "建議補充：..."
+        let suggestion = '';
+        const sugMatch = mf.match(/建議補充[:：]?([^。]*)/);
+        if (sugMatch && sugMatch[1]) {
+          suggestion = this.normalizeText(sugMatch[1]);
+        }
+
+        // remove segments labeled "常見用法：" / "助詞說明："
+        mf = mf.replace(/常見用法：[^。]*[。]?/g, '');
+        mf = mf.replace(/助詞說明：[^。]*[。]?/g, '');
+        // remove extracted suggestion text
+        if (sugMatch) mf = mf.replace(sugMatch[0], '');
+
+        // remove exact usage/particleExplanation occurrences
+        if (usage){
+          const esc = usage.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+          mf = mf.replace(new RegExp(esc,'g'),'');
+        }
+        if (particleExplanation){
+          const escp = particleExplanation.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+          mf = mf.replace(new RegExp(escp,'g'),'');
+        }
+
+        mf = mf.replace(/\s+/g,' ').trim();
+        // trim punctuation at ends
+        mf = mf.replace(/^[、，；\s]+/,'').replace(/[、，；\s]+$/,'').trim();
+
+        return { cleaned: mf, suggestion: suggestion };
+      },
+
+      /* -----------------------------
+         Show Answer (測驗與背誦) — 新版顯示邏輯
+         ----------------------------- */
+
+      showAnswer: function(){
+        const current = this.currentVocab[this.currentQuestionIndex];
+        if (!current) return;
+        const answerDiv = document.getElementById('answerDisplay');
+
+        const usage = this.normalizeText(current.usage || '');
+        const exampleText = this.normalizeText(current.example || '');
+        const exampleChinese = this.extractChineseFromExample(exampleText); // plain text
+        const usageHasChinese = this.hasCJK(usage) || /\（.*\）|\(.*\)/.test(usage);
+
+        let usageDisplay = '';
+        if (usage){
+          usageDisplay = usage;
+          if (!usageHasChinese && exampleChinese){
+            usageDisplay += '（' + exampleChinese + '）';
+          }
+        } else if (exampleText){
+          usageDisplay = exampleText;
+        }
+
+        const particle = this.normalizeText(current.particle_explanation || '');
+        const usageNotes = this.normalizeText(current.usage_notes || current.usageNotes || '');
+        const mfObj = this.sanitizeMeaningFull(this.normalizeText(current.meaning_full || current.meaningFull || ''), usage, particle);
+        const meaningFullClean = mfObj.cleaned;
+        const suggestion = mfObj.suggestion;
+
+        let html = '';
+        html += `<div style="margin-bottom:8px;"><strong style="font-size:1.2em;">${current.kanji || current.hiragana || ''}</strong> <span style="color:#718096;font-size:0.9em;margin-left:8px">${current.id || ''}</span></div>`;
+        html += `<div style="margin-bottom:8px;"><strong>中文:</strong> ${current.meaning || ''}</div>`;
+
+        if (usageDisplay){
+          html += `<div style="margin-bottom:8px;"><strong>用法:</strong> ${usageDisplay}</div>`;
+        }
+
+        if (particle){
+          html += `<div style="margin-bottom:8px;"><strong>助詞說明:</strong> ${particle}</div>`;
+        }
+
+        if (meaningFullClean){
+          html += `<div style="margin-bottom:8px;"><strong>詳解:</strong> ${meaningFullClean}</div>`;
+        }
+
+        if (suggestion){
+          html += `<div style="margin-bottom:8px;"><strong>建議補充:</strong> ${suggestion}</div>`;
+        }
+
+        if (usageNotes){
+          html += `<div style="margin-top:6px;color:#4a5568;"><strong>補充說明:</strong> ${usageNotes}</div>`;
+        }
+
+        answerDiv.innerHTML = html;
+        answerDiv.style.display = 'block';
+      },
+
+      showStudyAnswer: function(){
+        const current = this.studyWords[this.currentStudyIndex];
+        if (!current) return;
+        const answerDiv = document.getElementById('studyAnswerDisplay');
+
+        const usage = this.normalizeText(current.usage || '');
+        const exampleText = this.normalizeText(current.example || '');
+        const exampleChinese = this.extractChineseFromExample(exampleText);
+        const usageHasChinese = this.hasCJK(usage) || /\（.*\）|\(.*\)/.test(usage);
+
+        let usageDisplay = '';
+        if (usage){
+          usageDisplay = usage;
+          if (!usageHasChinese && exampleChinese) usageDisplay += '（' + exampleChinese + '）';
+        } else if (exampleText){
+          usageDisplay = exampleText;
+        }
+
+        const particle = this.normalizeText(current.particle_explanation || '');
+        const usageNotes = this.normalizeText(current.usage_notes || current.usageNotes || '');
+        const mfObj = this.sanitizeMeaningFull(this.normalizeText(current.meaning_full || current.meaningFull || ''), usage, particle);
+        const meaningFullClean = mfObj.cleaned;
+        const suggestion = mfObj.suggestion;
+
+        let html = '';
+        html += `<div style="margin-bottom:8px;"><strong style="font-size:1.2em;">${current.kanji || current.hiragana || ''}</strong> <span style="color:#718096;font-size:0.9em;margin-left:8px">${current.id || ''}</span></div>`;
+        html += `<div style="margin-bottom:8px;"><strong>中文:</strong> ${current.meaning || ''}</div>`;
+        if (usageDisplay) html += `<div style="margin-bottom:8px;"><strong>用法:</strong> ${usageDisplay}</div>`;
+        if (particle) html += `<div style="margin-bottom:8px;"><strong>助詞說明:</strong> ${particle}</div>`;
+        if (meaningFullClean) html += `<div style="margin-bottom:8px;"><strong>詳解:</strong> ${meaningFullClean}</div>`;
+        if (suggestion) html += `<div style="margin-bottom:8px;"><strong>建議補充:</strong> ${suggestion}</div>`;
+        if (usageNotes) html += `<div style="margin-top:6px;color:#4a5568;"><strong>補充說明:</strong> ${usageNotes}</div>`;
+
+        answerDiv.innerHTML = html;
+        answerDiv.style.display = 'block';
+      },
+
+      /* -----------------------------
+         其餘功能（保留原本邏輯）
+         ----------------------------- */
+
+      checkAnswer: function(selected, correct){
+        const isCorrect = selected === correct.meaning;
+        if (isCorrect) this.score++;
+        this.showAnswer();
+        document.querySelectorAll('.option-btn').forEach(btn=>{
+          btn.disabled = true;
+          if (btn.textContent === correct.meaning) btn.classList.add('correct');
+          else if (btn.textContent === selected && !isCorrect) btn.classList.add('incorrect');
+        });
+        document.getElementById('showAnswerBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'block';
+      },
+
+      showQuestion: function(){
+        const current = this.currentVocab[this.currentQuestionIndex];
+        document.getElementById('questionText').textContent = current.hiragana || current.kanji || '';
+        document.getElementById('progressText').textContent = `${this.currentQuestionIndex+1}/${this.currentVocab.length}`;
+        document.getElementById('answerDisplay').style.display = 'none';
+        document.getElementById('showAnswerBtn').style.display = 'block';
+        document.getElementById('nextBtn').style.display = 'none';
+        this.updateFavoriteButton('quizFavoriteBtn', current);
+
+        const pool = [current.meaning||''];
+        const all = this.loadVocabulary(this.currentQuizType,'');
+        const others = all.filter(w=>w.id!==current.id).map(w=>w.meaning).filter(Boolean);
+        while (pool.length < 4 && others.length){
+          const idx = Math.floor(Math.random()*others.length);
+          pool.push(others.splice(idx,1)[0]);
+        }
+        const options = this.shuffleArray(pool);
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+        options.forEach(opt=>{
+          const b = document.createElement('button');
+          b.className = 'option-btn';
+          b.textContent = opt;
+          b.onclick = ()=> this.checkAnswer(opt, current);
+          container.appendChild(b);
+        });
+      },
+
+      nextQuestion: function(){
+        this.currentQuestionIndex++;
+        if (this.currentQuestionIndex < this.currentVocab.length) this.showQuestion();
+        else this.endQuiz();
+      },
+
+      showStudyWord: function(){
+        const current = this.studyWords[this.currentStudyIndex];
+        document.getElementById('studyQuestionText').textContent = current.hiragana || current.kanji || '';
+        document.getElementById('studyProgressText').textContent = `${this.currentStudyIndex+1}/${this.studyWords.length}`;
+        document.getElementById('studyAnswerDisplay').style.display = 'none';
+        this.updateFavoriteButton('studyFavoriteBtn', current);
+      },
+
+      nextStudyWord: function(){
+        this.currentStudyIndex++;
+        if (this.currentStudyIndex < this.studyWords.length) this.showStudyWord();
+        else { alert('背誦完成'); this.showScreen('mainMenu'); }
+      },
+
+      toggleFavoriteWord: function(word){
+        if (!word || !word.id) return;
+        const fav = JSON.parse(localStorage.getItem('vocabFavorites')||'[]');
+        const idx = fav.findIndex(f=>f.id === word.id);
+        if (idx === -1) fav.push(word); else fav.splice(idx,1);
+        localStorage.setItem('vocabFavorites', JSON.stringify(fav));
+      },
+
+      toggleFavorite: function(){ const cur = this.currentVocab[this.currentQuestionIndex]; this.toggleFavoriteWord(cur); this.updateFavoriteButton('quizFavoriteBtn', cur); },
+      toggleStudyFavorite: function(){ const cur = this.studyWords[this.currentStudyIndex]; this.toggleFavoriteWord(cur); this.updateFavoriteButton('studyFavoriteBtn', cur); },
+
+      updateFavoriteButton: function(btnId, word){
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        const fav = JSON.parse(localStorage.getItem('vocabFavorites')||'[]');
+        const isFav = fav.some(f=>f.id === (word && word.id));
+        btn.textContent = isFav ? '★' : '☆';
+        btn.style.color = isFav ? '#e53e3e' : '#718096';
+      },
+
+      getFavorites: function(){ return JSON.parse(localStorage.getItem('vocabFavorites')||'[]'); },
+
+      startQuizFromFavorites: function(){
+        const fav = this.getFavorites();
+        if (!fav.length) { alert('還沒有收藏單字'); return; }
+        this.currentQuizType = 'favorite'; this.currentVocab = fav; this.currentQuestionIndex = 0; this.score = 0; this.quizMode = true; this.showScreen('quizScreen'); this.showQuestion();
+      },
+
+      startStudyFromFavorites: function(){
+        const fav = this.getFavorites();
+        if (!fav.length) { alert('還沒有收藏單字'); return; }
+        this.currentQuizType = 'favorite'; this.studyWords = fav; this.currentStudyIndex = 0; this.quizMode = false; this.showScreen('studyScreen'); this.showStudyWord();
+      },
+
+      showFavoriteList: function(){
+        const fav = this.getFavorites(); const list = document.getElementById('favoriteList');
+        if (!fav.length){ list.innerHTML = '<div class="stats"><p>還沒有收藏</p></div>'; return; }
+        let html = '<div class="stats">';
+        fav.forEach(w=>{
+          html += `<div style="margin-bottom:12px;padding:12px;border-bottom:1px solid #e2e8f0;border-radius:8px;background:white;"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;"><strong>${w.id}: ${w.kanji||w.hiragana}</strong><span style="color:#718096;font-size:0.9em"> - ${w.meaning}</span></div><span style="font-size:1.2em">${this.getCategoryIcon(w.id)}</span></div><div style="color:#718096;font-size:0.85em;margin-top:4px">${w.usage||''}</div></div>`;
+        });
+        html += '</div>'; list.innerHTML = html;
+      },
+
+      getCategoryIcon: function(wordId){
+        const prefix = (wordId && wordId.charAt) ? wordId.charAt(0) : '';
+        const icons = { 'N':'📖','I':'🔵','A':'🟢','V':'🏃','D':'⚡','O':'🔊','K':'🙏','G':'📝' };
+        return icons[prefix] || '📝';
+      },
+
+      speakText: function(text){ if('speechSynthesis' in window){ window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; u.rate=0.5; window.speechSynthesis.speak(u); } },
+
+      speakCurrentWord: function(){ const cur=this.currentVocab[this.currentQuestionIndex]; if (cur && cur.hiragana) this.speakText(cur.hiragana); },
+      speakCurrentStudyWord: function(){ const cur=this.studyWords[this.currentStudyIndex]; if (cur && cur.hiragana) this.speakText(cur.hiragana); },
+
+      shuffleArray: function(a){ const arr=a.slice(); for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]] } return arr; },
+
+      saveProgress: function(score,total){ const p=JSON.parse(localStorage.getItem('vocabProgress')||'{}'); const d=new Date().toISOString().split('T')[0]; if(!p[d]) p[d]={correct:0,total:0,sessions:0}; p[d].correct += score; p[d].total += total; p[d].sessions += 1; localStorage.setItem('vocabProgress', JSON.stringify(p)); },
+
+      loadProgress: function(){ return JSON.parse(localStorage.getItem('vocabProgress')||'{}'); },
+
+      showProgressStats: function(){ const p=this.loadProgress(); const el=document.getElementById('progressStats'); if(Object.keys(p).length===0){ el.innerHTML='<div class="stats"><p>尚無學習記錄</p></div>'; return; } let html=''; const dates=Object.keys(p).sort().reverse().slice(0,7); dates.forEach(d=>{ const it=p[d]; html += `<div class="stats"><strong>${d}</strong><br>📊 答對: ${it.correct}/${it.total} (${Math.round((it.correct/it.total)*100)}%)<br>🎯 次數: ${it.sessions}</div>`; }); el.innerHTML = html; },
+
+      checkForUpdates: function(){ if(!this.registration) return alert('ServiceWorker 未就緒'); this.registration.update().then(()=>{ if(this.updateAvailable && this.registration.waiting){ if(confirm('發現新版本，是否更新？')) this.applyUpdate(); } else alert('已是最新版本'); }); },
+      applyUpdate: function(){ if(this.registration && this.registration.waiting){ this.registration.waiting.postMessage({ type:'SKIP_WAITING' }); navigator.serviceWorker.addEventListener('controllerchange', ()=> location.reload()); setTimeout(()=>location.reload(),3000); } },
+
+      endQuiz: function(){ const percentage = Math.round((this.score / this.currentVocab.length) * 100); let message = `🎉 測驗完成！\n得分: ${this.score}/${this.currentVocab.length} (${percentage}%)`; if (percentage >= 90) message += '\n\n🏆 優秀！表現很棒！'; else if (percentage >= 70) message += '\n\n👍 不錯！繼續加油！'; else message += '\n\n💪 繼續努力，下次會更好！'; alert(message); this.saveProgress(this.score, this.currentVocab.length); this.showScreen('mainMenu'); },
+
+      endQuizEarly: function(){ if (confirm('確定要提前結束測驗嗎？')){ const answered = this.currentQuestionIndex + 1; const percentage = answered > 0 ? Math.round((this.score / answered) * 100) : 0; alert(`⏹️ 測驗提前結束！\n得分: ${this.score}/${answered} (${percentage}%)`); this.showScreen('mainMenu'); } },
+
+      endStudyEarly: function(){ if (confirm('確定要提前結束背誦嗎？')) this.showScreen('mainMenu'); },
+
+      // expose for debug
+    };
+
+    document.addEventListener('DOMContentLoaded', ()=> app.init());
+    window.App = app;
+  })();
+  </script>
+</body>
+</html>
